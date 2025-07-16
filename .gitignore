@@ -1,1 +1,3 @@
 mp3_files/*
+
+__pycache__/*
