@@ -131,15 +131,20 @@ while True:
                         state = "all_songs_menu"
                     else: # Zurück zur gefilterten Liste
                          state = "filtered_songs_menu"
-                elif state in ["all_songs_menu", "filtered_songs_menu"]:
+                elif state == "all_songs_menu":
                     state = "music_menu"
                     selected_index = 0
-                elif state in ["artist_menu", "album_menu"]:
-                     state = "music_menu"
-                     selected_index = 0
-                elif state in ["music_menu", "settings_menu"]:
+                elif state == "filtered_songs_menu":
+                    if current_menu_title in audio_player.artists:
+                        state = "artist_menu"
+                    else:
+                        state = "album_menu"
+                    selected_index = 0
+                elif state in ["artist_menu", "album_menu", "music_menu", "settings_menu"]:
                     state = "main_menu"
                     selected_index = 0
+                    
+                    
 
     # --- KORRIGIERTE ENCODER- UND TASTENSTEUERUNG ---
 
@@ -220,8 +225,14 @@ while True:
                 state = "all_songs_menu"
             else:
                  state = "filtered_songs_menu"
-        elif state in ["all_songs_menu", "filtered_songs_menu", "artist_menu", "album_menu"]:
+        elif state in ["all_songs_menu", "artist_menu", "album_menu"]:
             state = "music_menu"
+            selected_index = 0
+        elif state == "filtered_songs_menu":
+            if current_menu_title in audio_player.artists:
+                state = "artist_menu"
+            else:
+                state = "album_menu"
             selected_index = 0
         elif state in ["music_menu", "settings_menu"]:
             state = "main_menu"
@@ -335,7 +346,10 @@ while True:
         if audio_player.is_finished():
             current_song_index = audio_player.next_song()
             paused = False
-        # Hier die Logik für das Scrollen beibehalten
+        
+        song_filenames = [song['file'] for song in current_song_list]
+
+        # KORREKTUR: Scroll-Logik von "all_songs_menu" hierher kopiert
         line_height = ui.font.get_linesize() + 2
         selected_y_on_screen = 5 + selected_index * line_height - main_menu_scroll_y
         if selected_y_on_screen + line_height > HEIGHT:
@@ -343,8 +357,8 @@ while True:
         if selected_y_on_screen < 5:
             main_menu_scroll_y = selected_index * line_height
             
-        # Horizontalen Scroll-Offset für lange Titel berechnen
-        text_width = ui.font.size(os.path.splitext(audio_player.audio_files[selected_index])[0])[0]
+        text_to_check = os.path.splitext(song_filenames[selected_index])[0]
+        text_width = ui.font.size(text_to_check)[0]
         if text_width > WIDTH - 30:
             now = time.time()
             if now - last_main_scroll_time > 0.1:
@@ -352,8 +366,10 @@ while True:
                 last_main_scroll_time = now
         else:
             main_scroll_offset = 0
-        song_filenames = [song['file'] for song in current_song_list]
-        ui.draw_all_songs_menu(screen, song_filenames, selected_index, current_song_index, paused, 0, 0) # H- und V-Scroll vereinfacht
+
+        # KORREKTUR: main_scroll_offset und main_menu_scroll_y werden jetzt übergeben
+        ui.draw_all_songs_menu(screen, song_filenames, selected_index, current_song_index, paused, main_scroll_offset, main_menu_scroll_y)
+
 
 
     elif state == "play":
